@@ -45,6 +45,7 @@
   #include <unistd.h>
   #include <signal.h>
   #include <netinet/in.h>
+  #include <arpa/inet.h>
   #include <netdb.h>
 #endif
 
@@ -105,17 +106,28 @@ int main(int argc, char **argv) {
       url[i++] = c;
     }
     url[i] = '\0';
-    sprintf(befehl, "HEAD %s HTTP/1.1\r\nHost: www.macnews.de\r\n\r\n", url);
+    sprintf(befehl, "HEAD %s HTTP/1.1\r\nHost: www.macnews.de\r\nConnection: close\r\n\r\n", url);
     
     /* Connect to address and try to fetch HTTP header */
     if( connect(sock, (struct sockaddr*) &addr, sizeof(addr)) != -1 ) {      
       write(sock, befehl, sizeof(befehl));
-      res = read(sock, buffer, sizeof(buffer));      
-      if( strstr(buffer, "200 OK") == NULL) {
-        sprintf(message, "%s\n\0", url);         
-        fprintf(stdout, "%s", message);
+      res = read(sock, buffer, sizeof(buffer));            
+      if( strstr(buffer, "HTTP/1.1 200") == NULL) {        
+        if( strstr(buffer, "HTTP/1.1 301") != NULL) {
+          sprintf(message, "301: %s\n\nHeader response: %s\n\0", url, buffer);
+        } else if( strstr(buffer, "HTTP/1.1 302") != NULL) {
+          sprintf(message, "302: %s\n\nHeader response: %s\n\0", url, buffer);
+        } else if( strstr(buffer, "HTTP/1.1 404") != NULL) {
+          sprintf(message, "404: %s\n\nHeader response: %s\n\0", url, buffer);
+        } else if( strstr(buffer, "HTTP/1.1 400") != NULL) {
+          sprintf(message, "400: %s\n\nHeader response: %s\n\0", url, buffer);
+        } else {
+          sprintf(message, "UNKNOWN: %s\n\0", url);
+        }
+        /*fprintf(stdout, "%s", message);*/
         fwrite(message, sizeof(char), strlen(message), out);
       }
+      
       if( (round%100) == 0 ) {
         printf("Round %d\n", round);
       }
