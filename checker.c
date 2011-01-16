@@ -49,6 +49,8 @@
   #include <netdb.h>
 #endif
 
+#define HTTP_HEADER "HEAD %s HTTP/1.1\r\nHost: www.macnews.de\r\nConnection: close\r\n\r\n"
+
 #ifndef _WIN32
 int main(int argc, char **argv) {
   FILE *fd;
@@ -106,7 +108,7 @@ int main(int argc, char **argv) {
       url[i++] = c;
     }
     url[i] = '\0';
-    sprintf(befehl, "HEAD %s HTTP/1.1\r\nHost: www.macnews.de\r\nConnection: close\r\n\r\n", url);
+    sprintf(befehl, HTTP_HEADER, url);
     
     /* Connect to address and try to fetch HTTP header */
     if( connect(sock, (struct sockaddr*) &addr, sizeof(addr)) != -1 ) {      
