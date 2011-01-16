@@ -114,13 +114,13 @@ int main(int argc, char **argv) {
       res = read(sock, buffer, sizeof(buffer));            
       if( strstr(buffer, "HTTP/1.1 200") == NULL) {        
         if( strstr(buffer, "HTTP/1.1 301") != NULL) {
-          sprintf(message, "301: %s\n\nHeader response: %s\n\0", url, buffer);
+          sprintf(message, "301: %s\n\0", url);
         } else if( strstr(buffer, "HTTP/1.1 302") != NULL) {
-          sprintf(message, "302: %s\n\nHeader response: %s\n\0", url, buffer);
+          sprintf(message, "302: %s\n\0", url);
         } else if( strstr(buffer, "HTTP/1.1 404") != NULL) {
-          sprintf(message, "404: %s\n\nHeader response: %s\n\0", url, buffer);
+          sprintf(message, "404: %s\n\0", url);
         } else if( strstr(buffer, "HTTP/1.1 400") != NULL) {
-          sprintf(message, "400: %s\n\nHeader response: %s\n\0", url, buffer);
+          sprintf(message, "400: %s\n\0", url);
         } else {
           sprintf(message, "UNKNOWN: %s\n\0", url);
         }
