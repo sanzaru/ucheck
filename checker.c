@@ -4,7 +4,7 @@
  * text file (one URL per line) and they MUST be relative.
  *
  * Usage example: ./checker -u www.yourdomain.com -f urls_to_check.txt
- * Or simply:./checker -h
+ * Or simply: ./checker -h
  * to see a help screen with all available options.
  *
  * @author Martin Albrecht <martin.albrecht@javacoffee.com>
@@ -12,10 +12,9 @@
  *
  * IMPORTANT:
  * -----------
- * For now, this program only runs on unix systems, but win32 support is
- * planned for future versions.
- * Also, it is only possible to check IP addresses, not URL's. URL support is
- * also planned for the future.
+ * This program runs on unix machines only. There is no win32 support planned
+ * (anymore), so if you want the program run on windows machines, port it
+ * yourself - it's open source! ;)
  *
  * LICENSE:
  * --------
@@ -131,9 +130,6 @@ int main(int argc, char **argv) {
       return 1;
     }
     
-    /** 
-     * Read in one line 
-     */
     while( (c = getc(fd)) != '\n' && c != EOF ) {
       url[i++] = c;
     }
