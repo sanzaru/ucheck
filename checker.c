@@ -3,7 +3,9 @@
  * This program checks the HTTP status for given URLs. The URLs should be in a 
  * text file (one URL per line) and they MUST be relative.
  *
- * Usage example: ./checker 192.168.1.1 urls_to_check.txt
+ * Usage example: ./checker -u www.yourdomain.com -f urls_to_check.txt
+ * Or simply:./checker -h
+ * to see a help screen with all available options.
  *
  * @author Martin Albrecht <martin.albrecht@javacoffee.com>
  * @version 0.1
