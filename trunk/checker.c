@@ -77,6 +77,11 @@ int main(int argc, char **argv) {
   struct hostent *h = NULL;
   char befehl[386] , message[256];
   
+  if( argc < 4 ) {
+    fprintf(stderr, "Error: Not enough arguments given!\nTry %s -h for help!\n", argv[0]);
+    return 1;
+  }
+  
   while( (o = getopt(argc, argv, "hu:f:")) != -1 ) {
     switch(o) {    
       case 'h':
@@ -153,7 +158,7 @@ int main(int argc, char **argv) {
         } else if( strstr(buffer, "HTTP/1.1 302") != NULL) {
           sprintf(message, "302: %s\n\0", url);
         } else if( strstr(buffer, "HTTP/1.1 404") != NULL) {
-          sprintf(message, "404: %s - (%d)\n\0", url, strlen(url));
+          sprintf(message, "404: %s\n\0", url);
         } else if( strstr(buffer, "HTTP/1.1 400") != NULL) {
           sprintf(message, "400: %s\n\0", url);
         } else {
