@@ -1,7 +1,10 @@
 /**
  * URL check program
+ * -------------------
  * This program checks the HTTP status for given URLs. The URLs should be in a 
  * text file (one URL per line) and they MUST be relative.
+ * To check the URL the program fetches the HTTP header for the given URL and
+ * validates the returned status.
  *
  * Usage example: ./checker -u www.yourdomain.com -f urls_to_check.txt
  * Or simply: ./checker -h
@@ -15,6 +18,9 @@
  * This program runs on unix machines only. There is no win32 support planned
  * (anymore), so if you want the program run on windows machines, port it
  * yourself - it's open source! ;)
+ * For now, not all HTTP codes are implemented and for some a UNKNOWN will be
+ * returned. Full implementation of HTTP codes will be implemented, soon.
+ * 
  *
  * LICENSE:
  * --------
@@ -53,6 +59,7 @@
 #define TRUE 1
 #define HTTP_HEADER "HEAD %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n"
 
+/* Show help */
 void show_help() {
   printf("Help:\n \
     -h            Show this screen\n \
@@ -60,7 +67,7 @@ void show_help() {
     -f <filename> File with URLs to check\n\n");      
 }
 
-
+/* Main function */
 int main(int argc, char **argv) {
   FILE *fd;
   FILE *out;
@@ -70,9 +77,6 @@ int main(int argc, char **argv) {
   struct hostent *h = NULL;
   char befehl[386] , message[256];
   
-  /** 
-   * Check command line arguments 
-   */  
   while( (o = getopt(argc, argv, "hu:f:")) != -1 ) {
     switch(o) {    
       case 'h':
