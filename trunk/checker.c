@@ -10,7 +10,7 @@
  * Or simply: ./checker -h
  * to see a help screen with all available options.
  *
- * @author Martin Albrecht <martin.albrecht@javacoffee.com>
+ * @author Martin Albrecht <martin.albrecht@javacoffee.de>
  * @version 0.2
  *
  * IMPORTANT:
