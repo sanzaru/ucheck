@@ -1,2 +1,2 @@
 all:
-	cc -o checker checker.c
+	cc -o checker checker.c csvlib.c
