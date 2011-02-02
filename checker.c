@@ -11,7 +11,7 @@
  * to see a help screen with all available options.
  *
  * @author Martin Albrecht <martin.albrecht@javacoffee.com>
- * @version 0.1
+ * @version 0.2
  *
  * IMPORTANT:
  * -----------
@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <regex.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -57,15 +58,28 @@
 
 #define FALSE 0
 #define TRUE 1
-#define HTTP_HEADER "HEAD %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n"
+#define HTTP_HEADER "HEAD %s HTTP/1.1\r\nHost: %s\r\n\r\n"
 
 /* Show help */
 void show_help() {
   printf("Help:\n \
     -h            Show this screen\n \
     -u <url|ip>   URL or IP address to check\n \
-    -f <filename> File with URLs to check\n\n");      
+    -s <seconds>  Time to sleep (in seconds)\n \
+    -v            Verbose mode\n \
+    -f <filename> File with URLs to check (one URL per line)\n\n");      
 }
+
+/* Match Pattern */
+int match(char *pattern, char *source) {
+  regex_t re;
+  int status;
+  regcomp(&re, pattern, REG_EXTENDED|REG_NOSUB);
+  status = regexec(&re, source, (size_t)0, NULL, 0);
+  regfree(&re);
+  printf("Status: %d\n", status);
+}
+
 
 /* Main function */
 int main(int argc, char **argv) {
@@ -75,20 +89,22 @@ int main(int argc, char **argv) {
   int i, sock, res, round, valid, invalid, o=-1;  
   struct sockaddr_in addr;
   struct hostent *h = NULL;
-  char befehl[386] , message[256];
+  char befehl[386] , message[256], bltest[256];
+  int sleepTime = 0, verbose = FALSE;  
   
-  if( argc < 4 ) {
+  if( argc < 2 ) {
     fprintf(stderr, "Error: Not enough arguments given!\nTry %s -h for help!\n", argv[0]);
     return 1;
   }
   
-  while( (o = getopt(argc, argv, "hu:f:")) != -1 ) {
+  while( (o = getopt(argc, argv, "vhu:f:s:")) != -1 ) {
     switch(o) {    
       case 'h':
         show_help();
         return 0;
         break;
         
+      /* URL to fetch */
       case 'u':
         if( inet_addr(optarg) == INADDR_NONE && (h = gethostbyname(optarg)) == NULL ) {    
           fprintf(stderr, "Error: Invalid address!\n"); 
@@ -99,18 +115,30 @@ int main(int argc, char **argv) {
         } else {    
           addr.sin_addr.s_addr = inet_addr(optarg);
         }
-      break;
+        break;
       
+      /* File with URLs to check */
       case 'f':
         fd = fopen(optarg, "r");
         if( fd == NULL ) {
           fprintf(stderr, "Error: Cannot open file!\n");
           return 1;
         }
-      break;
+        break;
+      
+      /* Sleep time */
+      case 's':
+        sleepTime = atoi(optarg);
+        break;
+      
+      /* Verbose */
+      case 'v':
+        verbose = TRUE;
+        break;
         
+      /* Error check */
       case '?':
-        if( optopt == 'u' || optopt == 'f' ) {
+        if( optopt == 'u' || optopt == 'f' || optopt == 's' ) {
           fprintf(stderr, "Error: Option -%c requires an argument!\n", optopt);
           return 1;
         } else {
@@ -119,6 +147,7 @@ int main(int argc, char **argv) {
         }
         break;
         
+      /* Default */
       default:
         printf("usage: %s <arguments...>\nTry \"%s -h\" for help!\n", argv[0], argv[0]);
         return 1;
@@ -152,13 +181,16 @@ int main(int argc, char **argv) {
     if( connect(sock, (struct sockaddr*) &addr, sizeof(addr)) != -1 ) {      
       write(sock, befehl, sizeof(befehl));
       res = read(sock, buffer, sizeof(buffer));          
+      printf("%s", buffer);
+      sprintf(bltest, "Location: %s", url);
+      match(bltest, buffer);
       if( strstr(buffer, "HTTP/1.1 200") == NULL) {        
         if( strstr(buffer, "HTTP/1.1 301") != NULL) {
           sprintf(message, "301: %s\n\0", url);
         } else if( strstr(buffer, "HTTP/1.1 302") != NULL) {
           sprintf(message, "302: %s\n\0", url);
         } else if( strstr(buffer, "HTTP/1.1 404") != NULL) {
-          sprintf(message, "404: %s\n\0", url);
+          sprintf(message, "404: %s\n\0", url); 
         } else if( strstr(buffer, "HTTP/1.1 400") != NULL) {
           sprintf(message, "400: %s\n\0", url);
         } else {
@@ -167,7 +199,7 @@ int main(int argc, char **argv) {
         fwrite(message, sizeof(char), strlen(message), out);
       }
       
-      if( (round%100) == 0 ) {
+      if( (round%100) == 0 && verbose == TRUE ) {
         printf("Round %d\n", round);
       }
     } else {
@@ -175,6 +207,9 @@ int main(int argc, char **argv) {
     }       
     round++;
     close(sock);
+    if( sleepTime > 0 ) {
+      sleep(sleepTime);
+    }
     fclose(out);
   } 
   fclose(fd);  
