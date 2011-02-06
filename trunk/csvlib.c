@@ -13,6 +13,11 @@ int csvread(char *filename, char *buffer[]) {
     fprintf(stderr, "Error: Cannot read csv file %s!\n", filename);
     return 0;
   }
+  
+  if( sizeof(buffer) <= 0 ) {
+    fprintf(stderr, "Error: Size of CSV buffer cannot be zero!\n");
+    return 0;
+  }
     
   while( c != EOF && val <= sizeof(buffer) ) {     
     while( (c = getc(fd)) != '\n' ) {      
