@@ -3,8 +3,8 @@
  */
 #include "csvlib.h"
  
-int csvread(char *filename, char *buffer[]) {
-  char c, *tmp[];
+int csvread(char *filename, char **buffer) {
+  char c, **tmp;
   int i=0, val=0, v=0, index=0;
   FILE *fd;  
     
@@ -17,6 +17,8 @@ int csvread(char *filename, char *buffer[]) {
   if( sizeof(buffer) <= 0 ) {
     fprintf(stderr, "Error: Size of CSV buffer cannot be zero!\n");
     return 0;
+  } else {
+    tmp = malloc(sizeof(buffer));    
   }
   
   printf("Buffer size: %d\nTmp size: %d\n", sizeof(buffer), sizeof(tmp));
@@ -27,7 +29,7 @@ int csvread(char *filename, char *buffer[]) {
       if( c != ',' && c != ';' && c != '\t' ) {
         tmp[v][i++] = c;
       } else {        
-        i=0;         
+        i = 0;         
       }
       printf("Tmp[%d]: %s\n", v, tmp[v]);
       v++;
@@ -38,7 +40,7 @@ int csvread(char *filename, char *buffer[]) {
     index = 0;
     val++;    
   }
-  
+  free(tmp);
   fclose(fd);
   return 1;
 }
