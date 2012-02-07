@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include <regex.h>
 
 #include <sys/socket.h>
@@ -59,14 +60,18 @@
 #define FALSE 0
 #define TRUE 1
 #define HTTP_HEADER "HEAD %s HTTP/1.1\r\nHost: %s\r\n\r\n"
+#define MAX_BUF_SIZE 256
+
 
 /* Show help */
 void show_help() {
   printf("Help:\n \
     -h            Show this screen\n \
     -u <url|ip>   URL or IP address to check\n \
+                  NOTE: URL without http:// ! \
     -s <seconds>  Time to sleep (in seconds)\n \
     -v            Verbose mode\n \
+    -l <filename> Log file to log all messages to \
     -f <filename> File with URLs to check (one URL per line)\n\n");      
 }
 
@@ -77,7 +82,27 @@ int match(char *pattern, char *source) {
   regcomp(&re, pattern, REG_EXTENDED|REG_NOSUB);
   status = regexec(&re, source, (size_t)0, NULL, 0);
   regfree(&re);
-  printf("Status: %d\n", status);
+  /*printf("Status: %d\n", status);*/
+}
+
+/* Log message */
+void log_message(char *filename, char *message) {
+  FILE *fd;
+  char timebuf[60];
+  struct tm *time_info;
+  time_t rtime;
+  
+  if( strlen(message) > 0 ) {    
+    /* Build the date string */
+    time(&rtime);
+    time_info = localtime(&rtime);
+    strftime(timebuf, 60, "%d/%m/%Y %H:%M:%S", time_info);
+    
+    /* Log message and date string to file */
+    fd = fopen(filename, "a+");
+    fprintf(fd, "%s:\t%s\n", timebuf, message);
+    fclose(fd);
+  }
 }
 
 
@@ -85,11 +110,12 @@ int match(char *pattern, char *source) {
 int main(int argc, char **argv) {
   FILE *fd;
   FILE *out;
-  char *buf, c, url[256], buffer[65536];
+  char *buf, c, url[MAX_BUF_SIZE], buffer[65536];
   int i, sock, res, round, valid, invalid, o=-1;  
   struct sockaddr_in addr;
   struct hostent *h = NULL;
-  char befehl[386] , message[256], bltest[256];
+  char befehl[386] , message[MAX_BUF_SIZE], 
+       bltest[MAX_BUF_SIZE], *logfile=NULL;
   int sleepTime = 0, verbose = FALSE;  
   
   if( argc < 2 ) {
@@ -97,7 +123,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   
-  while( (o = getopt(argc, argv, "vhu:f:s:")) != -1 ) {
+  while( (o = getopt(argc, argv, "vhu:f:s:l:")) != -1 ) {
     switch(o) {    
       case 'h':
         show_help();
@@ -136,9 +162,14 @@ int main(int argc, char **argv) {
         verbose = TRUE;
         break;
         
+      /* Log file */
+      case 'l':
+        logfile = optarg;
+        break;
+        
       /* Error check */
       case '?':
-        if( optopt == 'u' || optopt == 'f' || optopt == 's' ) {
+        if( optopt == 'u' || optopt == 'f' || optopt == 's' || optopt == 'l' ) {
           fprintf(stderr, "Error: Option -%c requires an argument!\n", optopt);
           return 1;
         } else {
@@ -160,8 +191,7 @@ int main(int argc, char **argv) {
   valid = invalid = 0;
   round  = 1;
   while( c != EOF ) {    
-    i = 0;    
-    out = fopen("invalid_urls.txt", "a+");    
+    i = 0;        
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if( sock <= 0 )  {
       fprintf(stderr, "Error: Cannot open socket!\n");
@@ -181,7 +211,11 @@ int main(int argc, char **argv) {
     if( connect(sock, (struct sockaddr*) &addr, sizeof(addr)) != -1 ) {      
       write(sock, befehl, sizeof(befehl));
       res = read(sock, buffer, sizeof(buffer));          
-      printf("%s", buffer);
+      
+      if( verbose == TRUE ) {
+        printf("%s", buffer);
+      }
+      
       sprintf(bltest, "Location: %s", url);
       match(bltest, buffer);
       if( strstr(buffer, "HTTP/1.1 200") == NULL) {        
@@ -194,9 +228,8 @@ int main(int argc, char **argv) {
         } else if( strstr(buffer, "HTTP/1.1 400") != NULL) {
           sprintf(message, "400: %s\n\0", url);
         } else {
-          sprintf(message, "UNKNOWN: %s\n\0", url);
-        }        
-        fwrite(message, sizeof(char), strlen(message), out);
+          sprintf(message, "UNKNOWN: %s\n\nData: %s\n\0", url, buffer);
+        }                
       }
       
       if( (round%100) == 0 && verbose == TRUE ) {
@@ -207,10 +240,14 @@ int main(int argc, char **argv) {
     }       
     round++;
     close(sock);
+    
+    if( logfile != NULL ) {
+      log_message(logfile, message);
+    }
+    
     if( sleepTime > 0 ) {
       sleep(sleepTime);
     }
-    fclose(out);
   } 
   fclose(fd);  
   printf("All done! Terminating...\n");
