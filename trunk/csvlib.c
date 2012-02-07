@@ -1,5 +1,8 @@
 /**
  * Simple CSV reader library
+ * 
+ * @author Martin Albrecht <martin.albrecht@javacoffee.de>
+ * @version 0.2
  */
 #include "csvlib.h"
  
@@ -21,7 +24,7 @@ int csvread(char *filename, char **buffer) {
     tmp = malloc(sizeof(buffer));    
   }
   
-  printf("Buffer size: %d\nTmp size: %d\n", sizeof(buffer), sizeof(tmp));
+  /*printf("Buffer size: %d\nTmp size: %d\n", sizeof(buffer), sizeof(tmp));*/
     
   while( c != EOF && val <= sizeof(buffer)/2 ) {     
     while( (c = getc(fd)) != '\n' ) {            
@@ -31,7 +34,7 @@ int csvread(char *filename, char **buffer) {
       } else {        
         i = 0;         
       }
-      printf("Tmp[%d]: %s\n", v, tmp[v]);
+      /*printf("Tmp[%d]: %s\n", v, tmp[v]);*/
       v++;
       buffer[val][index++] = tmp[v];
       memset(tmp[v], 0, sizeof(tmp[v]));
